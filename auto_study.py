@@ -410,8 +410,26 @@ def click_course_card(title):
 
 def main_loop():
     log("="*60, "cyan")
-    log("🚀 TH-AI PASSPORT AUTOMATION RUNNER STARTED", "bold")
+    log("🚀 RATAI LESSON AUTOCOMPLETER STARTED", "bold")
+    log(f"💻 Platform: {'macOS (AppleScript JXA)' if IS_MAC else 'Windows / Linux (CDP port 9222)'}", "cyan")
     log("="*60, "cyan")
+    
+    # Verify Connection at startup
+    initial_check = exec_js("document.title")
+    if not initial_check:
+        log("\n⚠️ ยังไม่สามารถเชื่อมต่อกับ Google Chrome ได้", "yellow")
+        if IS_MAC:
+            log("🍏 วิธีตั้งค่าสำหรับ macOS (ทำครั้งเดียว):", "bold")
+            log("   1. เปิด Google Chrome และเข้าสู่ระบบ https://de.aipass.net/lms", "cyan")
+            log("   2. ที่เมนูด้านบนสุดของ Mac เลือก: View (มุมมอง) > Developer (นักพัฒนา)", "cyan")
+            log("   3. ติ๊กถูกที่: 'Allow JavaScript from Apple Events'", "green")
+        else:
+            log("🪟 วิธีตั้งค่าสำหรับ Windows (ทำครั้งเดียว):", "bold")
+            log("   1. ปิด Google Chrome ทั้งหมดก่อน", "cyan")
+            log("   2. กดปุ่ม Win + R บนคีย์บอร์ด แล้วพิมพ์:", "cyan")
+            log("      chrome.exe --remote-debugging-port=9222", "green")
+            log("   3. เปิดแท็บเข้าสู่ระบบ https://de.aipass.net/lms", "cyan")
+        log("\n⏳ กำลังรอการเชื่อมต่อกับ Chrome กรุณาทำตามขั้นตอนด้านบน...", "yellow")
     
     last_time_val = -1
     stall_count = 0
@@ -420,7 +438,7 @@ def main_loop():
         try:
             status = get_page_status()
             if not status:
-                time.sleep(2)
+                time.sleep(3)
                 continue
             
             # --- CASE 1: Inside Lesson / Video ---
