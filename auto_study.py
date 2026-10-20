@@ -408,11 +408,67 @@ def click_course_card(title):
     """
     return exec_js(js)
 
+def update_readme_and_push(completed_courses, total_points):
+    """Updates README.md with live completion stats and pushes to GitHub."""
+    try:
+        readme_path = "README.md"
+        if not os.path.exists(readme_path):
+            return
+        with open(readme_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        stats_markdown = f"""<!-- STATS_START -->
+## 🏆 สถิติการเรียนล่าสุด (Live Completion Stats)
+
+> อัปเดตล่าสุด: `{time.strftime('%Y-%m-%d %H:%M:%S')}`
+* **คะแนนสะสมรวม:** `{total_points:,} คะแนน`
+* **คอร์สที่เรียนจบแล้ว:** `{len(completed_courses)} คอร์ส`
+
+| # | ชื่อคอร์สที่สำเร็จ | คะแนนที่ได้รับ | สถานะ |
+|---|---|---|---|
+"""
+        for idx, c in enumerate(completed_courses, 1):
+            stats_markdown += f"| {idx} | **{c.get('title')}** | {c.get('points', 0):,} คะแนน | ✅ สำเร็จ |\n"
+        stats_markdown += "<!-- STATS_END -->"
+
+        if "<!-- STATS_START -->" in content and "<!-- STATS_END -->" in content:
+            content = re.sub(r'<!-- STATS_START -->.*?<!-- STATS_END -->', stats_markdown, content, flags=re.DOTALL)
+        else:
+            if "## 🛡️ License & Credit" in content:
+                content = content.replace("## 🛡️ License & Credit", stats_markdown + "\n\n---\n\n## 🛡️ License & Credit")
+            else:
+                content += "\n\n" + stats_markdown
+
+        with open(readme_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        subprocess.run(["git", "add", "README.md", "progress.json"], capture_output=True)
+        subprocess.run(["git", "commit", "-m", f"chore: auto-update progress ({len(completed_courses)} courses, {total_points:,} pts) [skip ci]"], capture_output=True)
+        subprocess.run(["git", "push", "origin", "main"], capture_output=True)
+        log(f"\n🚀 อัปเดตสถิติลง README.md และ Push ขึ้น GitHub เรียบร้อยแล้ว! (รวม {total_points:,} คะแนน)", "magenta")
+    except Exception as e:
+        log(f"\n⚠️ Auto-push error: {e}", "red")
+
 def main_loop():
     log("="*60, "cyan")
     log("🚀 RATAI LESSON AUTOCOMPLETER STARTED", "bold")
     log(f"💻 Platform: {'macOS (AppleScript JXA)' if IS_MAC else 'Windows / Linux (CDP port 9222)'}", "cyan")
     log("="*60, "cyan")
+    
+    # Load progress
+    progress_file = "progress.json"
+    completed_courses = []
+    total_points = 0
+    if os.path.exists(progress_file):
+        try:
+            with open(progress_file, "r", encoding="utf-8") as f:
+                saved = json.load(f)
+                completed_courses = saved.get("completed_courses", [])
+                total_points = saved.get("total_points", 0)
+        except Exception:
+            pass
+            
+    current_course = None
     
     # Verify Connection at startup
     initial_check = exec_js("document.title")
@@ -451,8 +507,14 @@ def main_loop():
                 
                 if status["hasCourseCompleted"]:
                     log("🏆 ยินดีด้วย! จบคอร์สนี้เรียบร้อยแล้ว กำลังกลับหน้าแรก...", "magenta")
+                    if current_course and not any(c.get("title") == current_course.get("title") for c in completed_courses):
+                        completed_courses.append(current_course)
+                        total_points += current_course.get("points", 0)
+                        with open(progress_file, "w", encoding="utf-8") as f:
+                            json.dump({"completed_courses": completed_courses, "total_points": total_points}, f, ensure_ascii=False, indent=2)
+                        update_readme_and_push(completed_courses, total_points)
                     exec_js("window.location.href = 'https://de.aipass.net/lms'")
-                    time.sleep(3)
+                    time.sleep(4)
                     continue
                 
                 if status["hasVideo"]:
@@ -460,18 +522,15 @@ def main_loop():
                     dur = status.get("videoDuration") or 0
                     pct = int((curr / dur) * 100) if dur > 0 else 0
                     
-                    # Ensure 2x speed is selected in player
                     if not "2x" in status.get("speedBtnText", ""):
                         ensure_2x_speed()
                     
-                    # Progress bar
                     bar_len = 25
                     filled = int(bar_len * pct / 100)
                     bar = "█" * filled + "░" * (bar_len - filled)
                     sys.stdout.write(f"\r▶️ [วิดีโอ 2x] [{bar}] {pct}% ({int(curr)}s/{int(dur)}s)")
                     sys.stdout.flush()
                     
-                    # Check stall / auto-play
                     if status["videoPaused"] or int(curr) == int(last_time_val):
                         stall_count += 1
                         if stall_count >= 5:
@@ -481,7 +540,6 @@ def main_loop():
                         stall_count = 0
                         last_time_val = curr
                     
-                    # If video near end
                     if dur > 0 and curr >= (dur - 0.5):
                         sys.stdout.write("\n")
                         log("🏁 วิดีโอจบแล้ว กำลังรอระบบบันทึกคะแนน...", "green")
@@ -519,9 +577,11 @@ def main_loop():
                 
                 if not uncompleted:
                     log("🎉 ทำครบทุกคอร์สแล้ว! สุดยอดมากครับ!", "green")
+                    update_readme_and_push(completed_courses, total_points)
                     break
                 
                 target = uncompleted[0]
+                current_course = target
                 log(f"🎯 เลือกคอร์สคะแนนสูงสุด: {target['title']} ({target['points']:,} คะแนน)", "green")
                 click_course_card(target["title"])
                 time.sleep(3)
