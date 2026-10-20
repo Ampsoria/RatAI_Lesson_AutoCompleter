@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """
 TH-AI Passport Automated Course Runner
-- Automatically sorts courses by highest points descending
-- Automatically sets video speed to 2x (maximum supported in LMS UI)
-- Auto-completes quizzes and moves between lessons
-- Auto-enrolls and moves to next course upon completion
+By Ampsoria (https://github.com/Ampsoria/RatAI_Lesson_AutoCompleter)
+
+Features:
+- Prioritizes and runs courses with highest points descending
+- Automatically sets video speed to 2.0x (safe maximum supported in LMS UI)
+- Auto-completes quizzes and transitions smoothly between lessons
+- Auto-enrolls and starts the next highest-scoring course upon completion
+- Loops perpetually until all available courses are 100% completed
+- Cross-platform: macOS (Native AppleScript JXA) & Windows/Linux (Zero-dependency CDP WebSocket)
 """
 
 import subprocess
@@ -146,7 +151,6 @@ def exec_js(js_code):
         except Exception:
             return ""
     else:
-        # Windows / Linux: Uses Chrome DevTools Protocol (CDP) on port 9222
         client = get_cdp_client()
         if client:
             return client.execute_js(js_code)
@@ -204,6 +208,18 @@ def get_page_status():
         let quizTitle = Array.from(document.querySelectorAll('h1, h2, h3, h4, p')).find(e => e.innerText && e.innerText.includes('แบบทดสอบ'));
         let hasQuiz = !!quizTitle && !hasVideo;
         
+        let lessonName = "";
+        let activeLessonBtn = document.querySelector("button[aria-label*='บทเรียน'].border-primary, button[aria-label*='บทเรียน'][class*='border-primary']");
+        if (activeLessonBtn) {
+            lessonName = activeLessonBtn.getAttribute("aria-label") || "";
+        }
+        if (!lessonName) {
+            let breadcrumbs = Array.from(document.querySelectorAll("nav a, nav span, header ~ div a, div.flex.items-center a")).map(e => e.innerText.trim()).filter(Boolean);
+            if (breadcrumbs.length > 2) {
+                lessonName = breadcrumbs[breadcrumbs.length - 1];
+            }
+        }
+        
         let buttons = Array.from(document.querySelectorAll('button')).map(b => b.innerText.trim()).filter(Boolean);
         
         return JSON.stringify({
@@ -221,6 +237,7 @@ def get_page_status():
             hasCongrats,
             hasCourseCompleted,
             hasQuiz,
+            lessonName,
             buttons
         });
     })()
@@ -244,7 +261,6 @@ def click_button_by_text(target_texts):
                 return 'clicked ' + t;
             }}
         }}
-        // Partial match fallback
         for (let t of targets) {{
             let btn = btns.find(b => b.innerText && b.innerText.includes(t));
             if (btn) {{
@@ -412,9 +428,9 @@ def main_loop():
     log("="*60, "cyan")
     log("🚀 RATAI LESSON AUTOCOMPLETER STARTED", "bold")
     log(f"💻 Platform: {'macOS (AppleScript JXA)' if IS_MAC else 'Windows / Linux (CDP port 9222)'}", "cyan")
+    log("🎯 Auto-Priority Queue: Highest points first", "green")
     log("="*60, "cyan")
     
-    # Verify Connection at startup
     initial_check = exec_js("document.title")
     if not initial_check:
         log("\n⚠️ ยังไม่สามารถเชื่อมต่อกับ Google Chrome ได้", "yellow")
@@ -433,6 +449,7 @@ def main_loop():
     
     last_time_val = -1
     stall_count = 0
+    current_active_lesson = ""
     
     while True:
         try:
@@ -443,6 +460,11 @@ def main_loop():
             
             # --- CASE 1: Inside Lesson / Video ---
             if status["isLesson"]:
+                l_name = status.get("lessonName")
+                if l_name and l_name != current_active_lesson:
+                    current_active_lesson = l_name
+                    log(f"\n📖 เริ่มบทเรียน: {l_name}", "cyan")
+                
                 if status["hasCongrats"]:
                     log("🎉 บทเรียนเสร็จสิ้น! กำลังคลิก 'เรียนต่อ'...", "green")
                     click_button_by_text(["เรียนต่อ", "ต่อไป", "ปิด"])
@@ -450,7 +472,7 @@ def main_loop():
                     continue
                 
                 if status["hasCourseCompleted"]:
-                    log("🏆 ยินดีด้วย! จบคอร์สนี้เรียบร้อยแล้ว กำลังกลับหน้าแรก...", "magenta")
+                    log("🏆 ยินดีด้วย! จบคอร์สนี้เรียบร้อยแล้ว กำลังกลับหน้าแรกเพื่อเรียนคอร์สถัดไป...", "magenta")
                     exec_js("window.location.href = 'https://de.aipass.net/lms'")
                     time.sleep(3)
                     continue
@@ -471,10 +493,14 @@ def main_loop():
                     sys.stdout.write(f"\r▶️ [วิดีโอ 2x] [{bar}] {pct}% ({int(curr)}s/{int(dur)}s)")
                     sys.stdout.flush()
                     
-                    # Check stall / auto-play
-                    if status["videoPaused"] or int(curr) == int(last_time_val):
+                    # Immediate auto-play if video paused
+                    if status["videoPaused"]:
+                        exec_js("let v = document.querySelector('video'); if (v) { v.muted=true; v.play(); }")
+                    
+                    # Check stall
+                    if int(curr) == int(last_time_val):
                         stall_count += 1
-                        if stall_count >= 5:
+                        if stall_count >= 4:
                             exec_js("let v = document.querySelector('video'); if (v) { v.muted=true; v.play(); }")
                             stall_count = 0
                     else:

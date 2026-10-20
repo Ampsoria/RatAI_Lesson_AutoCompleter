@@ -3,10 +3,11 @@
 # ⚡ RatAI Lesson AutoCompleter
 
 ### 🚀 Autonomous High-Yield Course & Quiz Automator for TH-AI Passport
-**Cross-Platform Automation Bot (macOS & Windows)**
+**Cross-Platform Automation Bot (macOS & Windows) with Smart Yield Priority**
 
 [![GitHub Stars](https://img.shields.io/github/stars/Ampsoria/RatAI_Lesson_AutoCompleter?style=for-the-badge&logo=github&color=blue)](https://github.com/Ampsoria/RatAI_Lesson_AutoCompleter)
 [![GitHub Forks](https://img.shields.io/github/forks/Ampsoria/RatAI_Lesson_AutoCompleter?style=for-the-badge&logo=github&color=purple)](https://github.com/Ampsoria/RatAI_Lesson_AutoCompleter)
+[![Version](https://img.shields.io/badge/Version-v1.2.0--AutoPriority-orange?style=for-the-badge)](README.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 [![Python Version](https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![macOS](https://img.shields.io/badge/macOS-AppleScript%20JXA-black?style=for-the-badge&logo=apple&logoColor=white)]()
@@ -15,7 +16,7 @@
 
 <br/>
 
-**RatAI Lesson AutoCompleter** คือระบบ Automation อัจฉริยะแบบ Zero-dependency ที่พัฒนาขึ้นเพื่ออำนวยความสะดวกในการเรียน, เร่งเก็บคะแนนสูงสุด, ทำแบบทดสอบ และสะสมใบประกาศนียบัตรบนแพลตฟอร์ม [TH-AI Passport LMS](https://de.aipass.net/lms) โดยรองรับทั้งระบบปฏิบัติการ **macOS** และ **Windows** อย่างสมบูรณ์แบบ
+**RatAI Lesson AutoCompleter** คือระบบ Automation อัจฉริยะแบบ Zero-dependency ที่พัฒนาขึ้นเพื่ออำนวยความสะดวกในการเรียน, เร่งเก็บคะแนนสูงสุด, ทำแบบทดสอบ และสะสมใบประกาศนียบัตรบนแพลตฟอร์ม [TH-AI Passport LMS](https://de.aipass.net/lms) โดยรองรับทั้งระบบปฏิบัติการ **macOS** และ **Windows** อย่างสมบูรณ์แบบ พร้อมระบบจัดลำดับความสำคัญคอร์สตามคะแนนสูงสุดก่อนอัตโนมัติ
 
 Developed with ❤️ by **[Ampsoria](https://github.com/Ampsoria)**
 
@@ -27,13 +28,15 @@ Developed with ❤️ by **[Ampsoria](https://github.com/Ampsoria)**
 
 | Feature | รายละเอียดความสามารถ |
 | :--- | :--- |
+| 🎯 **Smart Yield Priority Queue** | สแกนและคำนวณคะแนนทุกคอร์สบนหน้าเว็บแบบ Real-time (+250 คะแนนโบนัส) เรียงลำดับทำคอร์สที่ได้ **คะแนนเยอะสุดก่อนเสมอ** และวนลูปเรียนต่ออัตโนมัติจนครบทุกคอร์สบนแพลตฟอร์ม |
+| ⚡ **2.0x Playback Auto-Lock** | ล็อคความเร็ว 2 เท่าบน Video.js อัตโนมัติทุกครั้งที่เริ่มบทเรียนใหม่ ลดเวลาเรียนลง 50% ครบทุก Milestone ปลอดภัยต่อระบบนับคะแนนของเซิร์ฟเวอร์ |
+| 🔄 **Instant Auto-Unpause & Resume** | ตรวจจับการหยุดเล่นหรือวิดีโอค้างและสั่ง Resume เล่นต่อทันทีแบบ Zero-Delay ช่วยให้ระบบเดินหน้าต่อเนื่องโดยไม่ต้องมีคนเฝ้า |
+| 📝 **Smart Quiz Solver** | ตรวจจับแบบทดสอบประจำบทเรียน เลือกตัวเลือก ตรวจทาน และส่งผลคะแนนทันทีโดยอัตโนมัติ |
+| 🏆 **Continuous Self-Navigating Loop** | ตรวจจับป๊อปอัป "ยินดีด้วย!", คลิก "เรียนต่อ", รับ Certificate และเปลี่ยนไปเรียนคอร์สถัดไปอัตโนมัติเมื่อจบคอร์สเดิม |
 | 🌐 **Dual-OS Support** | รองรับทั้ง **macOS** (ผ่าน AppleScript JXA) และ **Windows** (ผ่าน Chrome DevTools Protocol พอร์ต 9222) |
-| 🎯 **Smart Yield Priority** | สแกนและคำนวณคะแนนทุกคอร์สแบบ Real-time (+250 คะแนนโบนัส) เรียงลำดับทำคอร์สที่ได้คะแนนสูงสุดก่อนเสมอ |
-| ⚡ **2x Playback Auto-Lock** | ล็อคความเร็ว 2 เท่าบน Video.js อัตโนมัติทุกครั้งที่เริ่มบทเรียนใหม่ ลดเวลาเรียนลง 50% ครบทุก Milestone เซิร์ฟเวอร์ |
-| 📝 **Smart Quiz Solver** | ตรวจจับแบบทดสอบประจำบทเรียน เลือกตัวเลือก ตรวจทาน และส่งผลคะแนนทันทีโดยไม่ต้องคลิกเอง |
-| 🔄 **Self-Navigating Loop** | ตรวจจับป๊อปอัป "ยินดีด้วย!", กด "เรียนต่อ", รับ Certificate และเปลี่ยนคอร์สอัตโนมัติเมื่อเรียนจบ |
-| 🛡️ **Anti-Bot Detection Free** | ควบคุมผ่านเบราว์เซอร์จริงที่ผู้ใช้เปิดไว้ ไม่ต้องใช้ ChromeDriver หรือสร้าง Profile ใหม่ จึงปลอดภัยและใช้ Session จริง |
-| 📦 **Zero Dependencies** | พัฒนาด้วย Pure Python Standard Library (`subprocess`, `json`, `time`, `re`, `sys`, `socket`) รันได้ทันทีโดยไม่ต้อง `pip install` |
+| 🛡️ **Anti-Bot Detection Free** | ควบคุมผ่าน Google Chrome ตัวจริงของผู้ใช้ ไม่ต้องใช้ Selenium / ChromeDriver จึงปลอดภัย 100% จากการโดนตรวจจับ |
+| 📦 **Zero External Dependencies** | พัฒนาด้วย Pure Python Standard Library ล้วน (`subprocess`, `json`, `time`, `re`, `sys`, `socket`) รันได้ทันทีโดยไม่ต้อง `pip install` |
+| 💻 **Zero-Overhead Terminal Display** | แสดงแถบ Progress Bar และสถานะการเรียนเรียลไทม์ผ่าน Terminal โดยตรง ไม่เปลืองดิสก์และประหยัด AI Quota |
 
 ---
 
@@ -50,27 +53,28 @@ flowchart TD
     C2 --> D
     
     D -->|หน้าหลัก LMS| E[สแกนหาคอร์สคะแนนสูงสุด]
-    E --> F[คัดกรองคอร์สที่ยังไม่ทำ]
-    F --> G[คลิกเข้าคอร์สที่คุ้มค่าที่สุด]
+    E --> F[จัดลำดับความสำคัญ Priority Queue]
+    F --> G[คลิกเข้าคอร์สที่ได้คะแนนเยอะสุดก่อน]
     
     D -->|หน้ารายละเอียด| H[คลิกปุ่ม 'เริ่มเรียน' / 'เรียนต่อ']
     
     D -->|หน้าบทเรียน: วิดีโอ| I[ล็อคความเร็ว 2x Playback Speed]
-    I --> J[เล่นวิดีโอจนจบ Milestone]
-    J --> K[คลิก 'เรียนต่อ' / บทเรียนถัดไป]
+    I --> J[เล่นวิดีโอ 2x ครบทุก Milestone & แสตมป์คะแนน]
+    J --> K[ตรวจจับป็อปอัป 'ยินดีด้วย!']
+    K --> L[คลิก 'เรียนต่อ' / บทเรียนถัดไป]
     
-    D -->|หน้าบทเรียน: แบบทดสอบ| L[ตรวจจับตัวเลือก & ตอบแบบทดสอบ]
-    L --> M[ส่งคำตอบ & ไปข้อถัดไป]
+    D -->|หน้าบทเรียน: แบบทดสอบ| M[ตรวจจับตัวเลือก & ตอบแบบทดสอบ]
+    M --> N[ส่งคำตอบ & ยืนยันผลคะแนน]
     
-    K --> N{จบคอร์สทั้งหมดหรือยัง?}
-    M --> N
-    N -->|ยังไม่จบ| D
-    N -->|จบคอร์ส| O[🏆 บันทึกคะแนน & เริ่มคอร์สถัดไป]
+    L --> P{จบคอร์สทั้งหมดหรือยัง?}
+    N --> P
+    P -->|ยังมีคอร์สอื่น| D
+    P -->|ครบทุกคอร์ส| Q[🎉 จบครบทุกคอร์สบนแพลตฟอร์ม!]
 ```
 
 ---
 
-## 🤖 สำหรับ AI Agent (AI Instructions & Guide)
+## 🤖 สำหรับ AI Agent (AI Agent Playbook)
 
 > **สำหรับ AI Assistants (เช่น Google Antigravity, Claude, Cursor, ChatGPT Desktop, Windsurf, AutoGPT):**  
 > หากคุณได้รับมอบหมายให้รันระบบนี้แทนผู้ใช้ กรุณาอ่านและปฏิบัติตามแนวทางนี้เพื่อแนะนำผู้ใช้และรันสคริปต์ได้อย่างราบรื่น:
@@ -95,8 +99,8 @@ flowchart TD
      python3 auto_study.py    # บน macOS
      python auto_study.py     # บน Windows
      ```
-   * ตรวจสอบ Progress จาก Terminal Output / Log Streams โดยตรง (ไม่ต้องเปิด browser subagent ให้เปลือง token)
-   * เมื่อจบคอร์ส ให้แจ้งสรุปคะแนนและใบประกาศที่ได้รับให้ผู้ใช้ทราบ
+   * ติดตาม Progress จาก Terminal Output / Log Streams โดยตรง (ไม่ต้องเปิด browser subagent ให้เปลือง token)
+   * เมื่อจบคอร์ส ให้แจ้งสรุปผลการเรียนและคะแนนที่ได้รับให้ผู้ใช้ทราบ
 
 ---
 
@@ -142,10 +146,11 @@ flowchart TD
 ============================================================
 🚀 RATAI LESSON AUTOCOMPLETER STARTED
 💻 Platform: macOS (AppleScript JXA)
+🎯 Auto-Priority Queue: Highest points first
 ============================================================
-🎯 คัดเลือกคอร์สคะแนนสูงสุด: Cloud-native with Azure Container Apps (2,055 คะแนน)
-📖 อยู่ในหน้ารายละเอียดคอร์ส กำลังคลิกเริ่มเรียน...
-▶️ [วิดีโอ 2x] [██████████████████░░░░░░░] 74% (702s/948s)
+🎯 เลือกคอร์สคะแนนสูงสุด: Cloud-native with Azure Container Apps (2,305 คะแนน)
+📖 เริ่มบทเรียน: บทเรียน 7: สร้าง Container Apps และ Container Apps Environments
+▶️ [วิดีโอ 2x] [█████████████░░░░░░░░░░░░] 52% (238s/458s)
 🏁 วิดีโอจบแล้ว กำลังรอระบบบันทึกคะแนน...
 🎉 บทเรียนเสร็จสิ้น! กำลังคลิก 'เรียนต่อ'...
 ```
@@ -156,11 +161,11 @@ flowchart TD
 
 ```text
 RatAI_Lesson_AutoCompleter/
-├── auto_study.py        # Core Engine รองรับทั้ง macOS & Windows
-├── requirements.txt     # ระบุสถานะ Zero-dependency
+├── auto_study.py        # Core Engine ทำงานอัตโนมัติ (รองรับทั้ง macOS & Windows)
+├── requirements.txt     # ระบุสถานะ Zero-dependency (ใช้ Python Built-in 100%)
 ├── README.md            # คู่มือฉบับสมบูรณ์สำหรับผู้ใช้และ AI Agent
 ├── LICENSE              # MIT License
-└── .gitignore           # กรองไฟล์แคชที่ไม่จำเป็น
+└── .gitignore           # กรองไฟล์ที่ไม่จำเป็น
 ```
 
 ---
