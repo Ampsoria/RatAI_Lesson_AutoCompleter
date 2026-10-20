@@ -12,17 +12,144 @@ import json
 import time
 import re
 import sys
+import platform
+import socket
+import urllib.request
+import base64
+import os
+
+IS_MAC = platform.system() == "Darwin"
+IS_WINDOWS = platform.system() == "Windows"
+
+class SimpleCDPClient:
+    """Minimal zero-dependency WebSocket client for Chrome DevTools Protocol on Windows/Linux."""
+    def __init__(self, ws_url):
+        self.ws_url = ws_url
+        self._connect()
+
+    def _connect(self):
+        url = self.ws_url.replace("ws://", "")
+        parts = url.split("/", 1)
+        host_port = parts[0].split(":")
+        self.host = host_port[0]
+        self.port = int(host_port[1]) if len(host_port) > 1 else 80
+        self.path = "/" + parts[1]
+        
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(5)
+        self.sock.connect((self.host, self.port))
+        
+        key = base64.b64encode(os.urandom(16)).decode()
+        req = (
+            f"GET {self.path} HTTP/1.1\r\n"
+            f"Host: {self.host}:{self.port}\r\n"
+            f"Upgrade: websocket\r\n"
+            f"Connection: Upgrade\r\n"
+            f"Sec-WebSocket-Key: {key}\r\n"
+            f"Sec-WebSocket-Version: 13\r\n\r\n"
+        )
+        self.sock.sendall(req.encode())
+        res = self.sock.recv(4096)
+        if b"101 Switching Protocols" not in res:
+            raise ConnectionError("WebSocket handshake failed")
+
+    def send_frame(self, text):
+        data = text.encode('utf-8')
+        length = len(data)
+        frame = bytearray([0x81])
+        mask = os.urandom(4)
+        if length <= 125:
+            frame.append(0x80 | length)
+        elif length <= 65535:
+            frame.append(0x80 | 126)
+            frame.extend(length.to_bytes(2, 'big'))
+        else:
+            frame.append(0x80 | 127)
+            frame.extend(length.to_bytes(8, 'big'))
+        frame.extend(mask)
+        masked_data = bytearray(b ^ mask[i % 4] for i, b in enumerate(data))
+        frame.extend(masked_data)
+        self.sock.sendall(frame)
+
+    def recv_frame(self):
+        head = self.sock.recv(2)
+        if not head:
+            return ""
+        length = head[1] & 0x7F
+        if length == 126:
+            length = int.from_bytes(self.sock.recv(2), 'big')
+        elif length == 127:
+            length = int.from_bytes(self.sock.recv(8), 'big')
+        payload = b""
+        while len(payload) < length:
+            chunk = self.sock.recv(min(length - len(payload), 4096))
+            if not chunk:
+                break
+            payload += chunk
+        return payload.decode('utf-8', errors='ignore')
+
+    def execute_js(self, js_code):
+        try:
+            payload = json.dumps({
+                "id": 1,
+                "method": "Runtime.evaluate",
+                "params": {
+                    "expression": js_code,
+                    "returnByValue": True
+                }
+            })
+            self.send_frame(payload)
+            res = self.recv_frame()
+            data = json.loads(res)
+            val = data.get("result", {}).get("result", {}).get("value")
+            return json.dumps(val) if isinstance(val, (dict, list)) else str(val or "")
+        except Exception:
+            try:
+                self._connect()
+            except Exception:
+                pass
+            return ""
+
+_cdp_client = None
+
+def get_cdp_client():
+    global _cdp_client
+    if _cdp_client:
+        return _cdp_client
+    try:
+        req = urllib.request.urlopen("http://127.0.0.1:9222/json", timeout=2)
+        tabs = json.loads(req.read().decode())
+        target_url = None
+        for tab in tabs:
+            if "aipass.net" in tab.get("url", ""):
+                target_url = tab.get("webSocketDebuggerUrl")
+                break
+        if not target_url and tabs:
+            target_url = tabs[0].get("webSocketDebuggerUrl")
+        if target_url:
+            _cdp_client = SimpleCDPClient(target_url)
+            return _cdp_client
+    except Exception:
+        return None
+    return None
 
 def exec_js(js_code):
-    """Executes JavaScript inside the active Google Chrome tab via AppleScript."""
-    cmd = ["osascript", "-l", "JavaScript", "-e", f"""
-        const app = Application("Google Chrome");
-        app.windows[0].activeTab.execute({{javascript: {json.dumps(js_code)}}});
-    """]
-    try:
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-        return res.stdout.strip()
-    except Exception as e:
+    """Executes JavaScript inside the active Google Chrome tab across macOS and Windows."""
+    if IS_MAC:
+        cmd = ["osascript", "-l", "JavaScript", "-e", f"""
+            const app = Application("Google Chrome");
+            app.windows[0].activeTab.execute({{javascript: {json.dumps(js_code)}}});
+        """]
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+            return res.stdout.strip()
+        except Exception:
+            return ""
+    else:
+        # Windows / Linux: Uses Chrome DevTools Protocol (CDP) on port 9222
+        client = get_cdp_client()
+        if client:
+            return client.execute_js(js_code)
         return ""
 
 def log(msg, color="white"):

@@ -63,14 +63,25 @@ flowchart TD
 
 ## ⚙️ ข้อกำหนดเบื้องต้น (Prerequisites)
 
-1. **ระบบปฏิบัติการ:** macOS (Catalina, Big Sur, Monterey, Ventura, Sonoma, Sequoia หรือใหม่กว่า)
-2. **เบราว์เซอร์:** Google Chrome
-3. **การเปิดสิทธิ์ควบคุม Chrome (ตั้งค่าเพียงครั้งเดียว):**
+### 🍏 สำหรับผู้ใช้ macOS:
+1. **การเปิดสิทธิ์ควบคุม Chrome (ตั้งค่าเพียงครั้งเดียว):**
    * เปิด Google Chrome
-   * ที่ Menu Bar ด้านบนของเครื่อง Mac เลือก: **View (มุมมอง)** > **Developer (นักพัฒนา)**
+   * ที่แถบ Menu Bar ด้านบนของ Mac เลือก: **View (มุมมอง)** > **Developer (นักพัฒนา)**
    * คลิกติ๊กถูกที่: **"Allow JavaScript from Apple Events"** (อนุญาต JavaScript จาก Apple Events)
-4. **เข้าสู่ระบบ:**
-   * ล็อกอินบัญชีของคุณใน [https://de.aipass.net/lms](https://de.aipass.net/lms) บน Chrome ทิ้งไว้ 1 แท็บ
+2. **เข้าสู่ระบบ:**
+   * ล็อกอินบัญชี [https://de.aipass.net/lms](https://de.aipass.net/lms) บน Chrome ทิ้งไว้ 1 แท็บ
+
+---
+
+### 🪟 สำหรับผู้ใช้ Windows:
+1. **เปิด Google Chrome ด้วย Remote Debugging Port (9222):**
+   * กด `Win + R` แล้วพิมพ์คำสั่ง:
+     ```cmd
+     chrome.exe --remote-debugging-port=9222
+     ```
+   * *หรือสร้าง Shortcut ของ Chrome แล้วเติม `--remote-debugging-port=9222` ต่อท้าย Target*
+2. **เข้าสู่ระบบ:**
+   * ล็อกอินบัญชี [https://de.aipass.net/lms](https://de.aipass.net/lms) ในหน้าต่าง Chrome ที่เปิดขึ้นมา
 
 ---
 
@@ -85,9 +96,14 @@ cd RatAI_Lesson_AutoCompleter
 
 ### 2. รันสคริปต์
 
-```bash
-python3 auto_study.py
-```
+* **บน macOS:**
+  ```bash
+  python3 auto_study.py
+  ```
+* **บน Windows (Command Prompt หรือ PowerShell):**
+  ```cmd
+  python auto_study.py
+  ```
 
 ### 3. ตัวอย่างการแสดงผลบน Terminal (Live Progress)
 
