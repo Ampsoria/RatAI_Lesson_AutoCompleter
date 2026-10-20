@@ -1,120 +1,144 @@
-# 🤖 TH-AI Passport LMS Automation
+<div align="center">
 
-[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)]()
-[![Dependencies](https://img.shields.io/badge/Dependencies-Zero%20(Standard%20Library)-green.svg)]()
-[![Author](https://img.shields.io/badge/Author-Ampsoria-orange.svg)]()
+# ⚡ RatAI Lesson AutoCompleter
 
-> **Automated Course Runner for TH-AI Passport (`https://de.aipass.net/lms`)**  
-> An autonomous bot designed to prioritize highest-scoring courses, accelerate videos to 2x, complete quizzes, and collect certifications automatically.
-> 
-> **Created by Ampsoria**
+### 🚀 Autonomous High-Yield Course & Quiz Automator for TH-AI Passport
 
----
+[![GitHub Stars](https://img.shields.io/github/stars/Ampsoria/RatAI_Lesson_AutoCompleter?style=for-the-badge&logo=github&color=blue)](https://github.com/Ampsoria/RatAI_Lesson_AutoCompleter)
+[![GitHub Forks](https://img.shields.io/github/forks/Ampsoria/RatAI_Lesson_AutoCompleter?style=for-the-badge&logo=github&color=purple)](https://github.com/Ampsoria/RatAI_Lesson_AutoCompleter)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![Python Version](https://img.shields.io/badge/Python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/Platform-macOS%20JXA-black?style=for-the-badge&logo=apple&logoColor=white)]()
+[![Zero Dependency](https://img.shields.io/badge/Dependencies-0%20External%20Pkgs-brightgreen?style=for-the-badge)]()
 
-## 🌟 จุดเด่นและความสามารถ (Key Features)
+<br/>
 
-* 🎯 **Smart Course Prioritization (เรียงลำดับคะแนนสูงสุด):**
-  สแกนและจัดลำดับคอร์สทั้งหมดบน TH-AI Passport โดยคำนวณคะแนนรวมและคะแนนโบนัส (+250 โบนัส) แล้วเริ่มทำคอร์สที่ได้คะแนนเยอะที่สุดลงมาตามลำดับ (Descending order)
-* ⚡ **2x Playback Speed Auto-Enforcer (เร่งความเร็ว 2 เท่า):**
-  เนื่องจากระบบ LMS ล็อคการเลื่อนแถบเวลา (Seek Bar) เพื่อตรวจสอบ Milestone ทุก ๆ 10 วินาที สคริปต์จะปรับความเร็วเป็น **2x** บน Player ของ Chrome เสมอทุกครั้งที่เริ่มบทเรียนใหม่ ช่วยประหยัดเวลาลงครึ่งหนึ่งโดยไม่ผิดเงื่อนไขระบบ
-* 📝 **Auto-Quiz & Lesson Transitions (ทำแบบทดสอบอัตโนมัติ):**
-  ตรวจจับแบบทดสอบประจำบท/คอร์ส เลือกคำตอบ ส่งคำตอบ และกดปุ่ม "เรียนต่อ" / "ต่อไป" ทันทีที่จบบทเรียน
-* 🔄 **Fully Autonomous Infinite Loop (ทำงานต่อเนื่องแบบอัตโนมัติ):**
-  เมื่อเรียนจบคอร์ส ระบบจะบันทึกสถานะ รับคะแนน/ใบประกาศนียบัตร และกลับไปหน้าหลักเพื่อเลือกคอร์สที่ยังไม่ได้ทำถัดไปทันที
-* 📦 **Zero External Dependencies (ไม่ต้องลง Library เพิ่ม):**
-  ใช้เพียง Python Standard Library (`subprocess`, `json`, `time`, `re`, `sys`) รันได้ทันทีโดยไม่ต้อง `pip install` ใด ๆ
+**RatAI Lesson AutoCompleter** is an ultra-fast, zero-dependency autonomous bot designed to automate learning, maximize points, and clear certifications on [TH-AI Passport LMS](https://de.aipass.net/lms).
+
+Developed with ❤️ by **[Ampsoria](https://github.com/Ampsoria)**
+
+</div>
 
 ---
 
-## 🛠️ ข้อกำหนดเบื้องต้น (Prerequisites)
+## 🌟 จุดเด่นและความสามารถ (Highlights & Features)
 
-1. **ระบบปฏิบัติการ:** macOS
-2. **เบราว์เซอร์:** Google Chrome
-3. **การตั้งค่า Chrome (สำคัญมาก - ทำเพียงครั้งเดียว):**
-   * เปิด Google Chrome
-   * ที่แถบเมนูด้านบนสุดของ Mac เลือก: **View (มุมมอง)** > **Developer (นักพัฒนา)**
-   * ติ๊กถูกที่: **"Allow JavaScript from Apple Events"** (อนุญาต JavaScript จาก Apple Events)
-4. **เข้าสู่ระบบ:**
-   * เปิดแท็บ Chrome ไปที่ [https://de.aipass.net/lms](https://de.aipass.net/lms) และล็อกอินเข้าสู่ระบบให้เรียบร้อย
-
----
-
-## 🚀 วิธีการใช้งาน (Usage Guide)
-
-### สำหรับผู้ใช้งานทั่วไป (Humans)
-
-1. Clone โปรเจกต์ลงเครื่อง:
-   ```bash
-   git clone https://github.com/Ampsoria/Amp_AutomateAipasssport.git
-   cd Amp_AutomateAipasssport
-   ```
-
-2. เปิด Chrome ไว้ที่หน้า `https://de.aipass.net/lms` (เข้าสู่ระบบแล้ว)
-
-3. รันสคริปต์ผ่าน Terminal:
-   ```bash
-   python3 auto_study.py
-   ```
-
-4. สคริปต์จะเริ่มทำงาน พร้อมแสดง Progress Bar และสถานะแบบ Real-time:
-   ```text
-   ============================================================
-   🚀 TH-AI PASSPORT AUTOMATION RUNNER STARTED
-   ============================================================
-   🎯 เลือกคอร์สคะแนนสูงสุด: Cloud-native with Azure Container Apps (2,055 คะแนน)
-   📖 อยู่ในหน้ารายละเอียดคอร์ส กำลังคลิกเริ่มเรียน...
-   ▶️ [วิดีโอ 2x] [████████████░░░░░░░░░░░░░] 48% (456s/948s)
-   ```
+| Feature | รายละเอียดความสามารถ |
+| :--- | :--- |
+| 🎯 **Smart Yield Priority** | สแกนและคำนวณคะแนนทุกคอร์สแบบ Real-time (+250 คะแนนโบนัส) เรียงลำดับทำคอร์สที่ได้คะแนนสูงสุดก่อนเสมอ |
+| ⚡ **2x Playback Auto-Lock** | ปรับความเร็ว 2 เท่าบน Video.js อัตโนมัติทุกครั้งที่เริ่มบทเรียนใหม่ ลดเวลาเรียนลง 50% อย่างถูกต้องตามเงื่อนไขเซิร์ฟเวอร์ |
+| 📝 **Smart Quiz Solver** | ตรวจจับแบบทดสอบประจำบทเรียน เลือกตัวเลือก ตรวจทาน และส่งผลคะแนนทันทีโดยไม่ต้องคลิกเอง |
+| 🔄 **Self-Navigating Loop** | ตรวจจับป๊อปอัป "ยินดีด้วย!", กด "เรียนต่อ", รับ Certificate และเปลี่ยนคอร์สอัตโนมัติเมื่อเรียนจบ |
+| 🛡️ **Anti-Bot Detection Free** | ควบคุมผ่าน AppleScript JavaScript for Automation (JXA) จึงใช้ Session/Cookies จริง ปลอดภัย ไม่โดนตรวจจับ |
+| 📦 **Zero Dependencies** | รันด้วย Pure Python Standard Library (`subprocess`, `json`, `time`, `re`, `sys`) รันได้ทันทีทุกเครื่อง |
 
 ---
 
-### สำหรับ AI Agents (Antigravity / Claude / AutoGPT / Cursor)
+## 🏗️ แผนภาพการทำงาน (Architecture Workflow)
 
-หากคุณเป็น AI Agent หรือระบบอัตโนมัติที่นำสคริปต์นี้ไปรันบนเครื่องผู้ใช้:
-
-1. ตรวจสอบว่า Chrome กำลังรันอยู่และเปิดหน้า `https://de.aipass.net/`
-2. ทดสอบการเชื่อมต่อ AppleScript:
-   ```bash
-   osascript -l JavaScript -e 'Application("Google Chrome").windows[0].activeTab.execute({javascript: "document.title"})'
-   ```
-   *หากได้ Title กลับมา แสดงว่าพร้อมทำงานทันที*
-3. สั่งรันสคริปต์ใน Background Task:
-   ```bash
-   python3 auto_study.py
-   ```
-4. AI Agent สามารถอ่าน Status / Progress จาก stdout/stderr หรือ Log file ได้โดยตรงโดยไม่ต้องใช้ browser subagent เปลือง token
-
----
-
-## 📂 โครงสร้างโปรเจกต์ (Project Structure)
-
-```text
-Amp_AutomateAipasssport/
-├── auto_study.py        # สคริปต์หลัก ควบคุม Chrome อัตโนมัติ
-├── requirements.txt     # แจ้งสถานะ Zero-dependency
-├── README.md            # คู่มือการใช้งานและเอกสารกำกับ
-├── LICENSE              # MIT License
-└── .gitignore           # กรองไฟล์ที่ไม่จำเป็นสำหรับ Git
+```mermaid
+flowchart TD
+    A[🏁 Start: auto_study.py] --> B{เช็คสถานะหน้าจอเว็บ}
+    
+    B -->|หน้าหลัก LMS| C[สแกนหาคอร์สคะแนนสูงสุด]
+    C --> D[คัดกรองคอร์สที่ยังไม่ทำ]
+    D --> E[คลิกเข้าคอร์สที่คุ้มค่าที่สุด]
+    
+    B -->|หน้ารายละเอียด| F[คลิกปุ่ม 'เริ่มเรียน' / 'เรียนต่อ']
+    
+    B -->|หน้าบทเรียน: วิดีโอ| G[ล็อคความเร็ว 2x Playback Speed]
+    G --> H[เล่นวิดีโอจนจบ Milestone]
+    H --> I[คลิก 'เรียนต่อ' / บทเรียนถัดไป]
+    
+    B -->|หน้าบทเรียน: แบบทดสอบ| J[ตรวจจับตัวเลือก & เลือกคำตอบ]
+    J --> K[กดส่งคำตอบ & ไปข้อถัดไป]
+    
+    I --> L{จบคอร์สทั้งหมดหรือยัง?}
+    K --> L
+    L -->|ยังไม่จบ| B
+    L -->|จบคอร์ส| M[🏆 รับใบประกาศนียบัตร & เริ่มคอร์สถัดไป]
 ```
 
 ---
 
-## ⚙️ เบื้องหลังการทำงาน (Technical Architecture)
+## ⚙️ ข้อกำหนดเบื้องต้น (Prerequisites)
 
-1. **AppleScript JXA Bridge:**  
-   ใช้ `osascript -l JavaScript` ควบคุม Google Chrome Tab ที่เปิดอยู่โดยตรง ไม่ต้องพึ่งพา Selenium หรือ ChromeDriver จึงไม่ถูกตรวจจับว่าเป็น Bot และใช้ Session/Cookies ที่ล็อกอินอยู่จริงได้ 100%
-2. **Milestone Integrity Compliance:**  
-   เนื่องจากระบบ TH-AI Passport ใช้ Next.js + Turbopack ร่วมกับ Video.js ตรวจจับการรับชมทุก ๆ 10 วินาที (`Math.min(s, lastConfirmedWatchedSeconds + 10)`) การเร่งสปีดที่ 2x เป็นความเร็วที่เซิร์ฟเวอร์ยอมรับทุก Milestone อย่างสมบูรณ์และได้รับคะแนนเต็มทุกบทเรียน
-3. **Dynamic DOM Querying:**  
-   ค้นหาและเชื่อมโยง UI Elements แบบ Dynamic ตามภาษาและสถานะของปุ่ม (`เริ่มเรียน`, `เรียนต่อ`, `แบบทดสอบ`, `ส่งคำตอบ`)
+1. **ระบบปฏิบัติการ:** macOS (Catalina, Big Sur, Monterey, Ventura, Sonoma, Sequoia หรือใหม่กว่า)
+2. **เบราว์เซอร์:** Google Chrome
+3. **การเปิดสิทธิ์ควบคุม Chrome (ตั้งค่าเพียงครั้งเดียว):**
+   * เปิด Google Chrome
+   * ที่ Menu Bar ด้านบนของเครื่อง Mac เลือก: **View (มุมมอง)** > **Developer (นักพัฒนา)**
+   * คลิกติ๊กถูกที่: **"Allow JavaScript from Apple Events"** (อนุญาต JavaScript จาก Apple Events)
+4. **เข้าสู่ระบบ:**
+   * ล็อกอินบัญชีของคุณใน [https://de.aipass.net/lms](https://de.aipass.net/lms) บน Chrome ทิ้งไว้ 1 แท็บ
 
 ---
 
-## 📄 License & Credits
+## 🚀 วิธีการติดตั้งและเริ่มใช้งาน (Getting Started)
 
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for more information.
+### 1. Clone Repository
 
-* **Author:** Ampsoria
-* **Repository:** [https://github.com/Ampsoria/Amp_AutomateAipasssport](https://github.com/Ampsoria/Amp_AutomateAipasssport)
+```bash
+git clone https://github.com/Ampsoria/RatAI_Lesson_AutoCompleter.git
+cd RatAI_Lesson_AutoCompleter
+```
+
+### 2. รันสคริปต์
+
+```bash
+python3 auto_study.py
+```
+
+### 3. ตัวอย่างการแสดงผลบน Terminal (Live Progress)
+
+```text
+============================================================
+🚀 RATAI LESSON AUTOCOMPLETER STARTED
+============================================================
+🎯 คัดเลือกคอร์สคะแนนสูงสุด: Cloud-native with Azure Container Apps (2,055 คะแนน)
+📖 อยู่ในหน้ารายละเอียดคอร์ส กำลังคลิกเริ่มเรียน...
+▶️ [วิดีโอ 2x] [██████████████████░░░░░░░] 74% (702s/948s)
+🏁 วิดีโอจบแล้ว กำลังรอระบบบันทึกคะแนน...
+🎉 บทเรียนเสร็จสิ้น! กำลังคลิก 'เรียนต่อ'...
+```
+
+---
+
+## 🤖 สำหรับ AI Agents & Automation Frameworks
+
+หากคุณเป็น **AI Coding Assistant / Subagent** (เช่น Google Antigravity, Claude Desktop, Cursor, AutoGPT) ที่ต้องการนำสคริปต์นี้ไปทำงานแทนผู้ใช้:
+
+1. **Test Connection:**
+   ```bash
+   osascript -l JavaScript -e 'Application("Google Chrome").windows[0].activeTab.execute({javascript: "document.title"})'
+   ```
+2. **Execute as Background Daemon:**
+   ```bash
+   python3 auto_study.py
+   ```
+3. **Inspect Logs:**  
+   ตรวจสอบความคืบหน้าผ่าน standard output หรือ log streams โดยไม่ต้องเปลือง Token ในการจับภาพหน้าจอหรือเปิด browser subagent ซ้ำซ้อน
+
+---
+
+## 📁 โครงสร้างโปรเจกต์ (Project Tree)
+
+```text
+RatAI_Lesson_AutoCompleter/
+├── auto_study.py        # Core Engine: ระบบควบคุมและวนลูปคอร์สอัตโนมัติ
+├── requirements.txt     # เอกสารระบุ Zero-dependency
+├── README.md            # คู่มือการใช้งานฉบับสมบูรณ์
+├── LICENSE              # MIT License
+└── .gitignore           # กรองไฟล์แคชและไฟล์ระบบ
+```
+
+---
+
+## 🛡️ License & Credit
+
+เผยแพร่ภายใต้สัญญาอนุญาต **MIT License** ดูรายละเอียดเพิ่มเติมได้ที่ [LICENSE](LICENSE)
+
+* **ผู้พัฒนา (Author):** **[Ampsoria](https://github.com/Ampsoria)**
+* **GitHub Repository:** [https://github.com/Ampsoria/RatAI_Lesson_AutoCompleter](https://github.com/Ampsoria/RatAI_Lesson_AutoCompleter)
+
+> *Disclaimer: โปรเจกต์นี้สร้างขึ้นเพื่อการศึกษาและการวิจัยด้าน Browser Automation เท่านั้น ผู้ใช้งานควรปฏิบัติตามข้อกำหนดและนโยบายการใช้งานของแพลตฟอร์ม*
