@@ -195,6 +195,16 @@ def get_page_status():
         
         let video = document.querySelector('video');
         let hasVideo = !!video;
+        if (hasVideo && !window._studyWatchdog) {
+            window._studyWatchdog = setInterval(() => {
+                let vid = document.querySelector('video');
+                if (vid && vid.paused && !vid.ended && vid.duration > 0 && vid.currentTime < (vid.duration - 0.5)) {
+                    vid.muted = true;
+                    vid.playbackRate = 2.0;
+                    vid.play();
+                }
+            }, 500);
+        }
         let videoEnded = video ? video.ended : false;
         let videoTime = video ? video.currentTime : 0;
         let videoDuration = video ? video.duration : 0;
@@ -315,7 +325,19 @@ def ensure_2x_speed():
             }
         }
         
+        if (!window._studyWatchdog) {
+            window._studyWatchdog = setInterval(() => {
+                let vid = document.querySelector('video');
+                if (vid && vid.paused && !vid.ended && vid.duration > 0 && vid.currentTime < (vid.duration - 0.5)) {
+                    vid.muted = true;
+                    vid.playbackRate = 2.0;
+                    vid.play();
+                }
+            }, 500);
+        }
+        
         v.muted = true;
+        v.playbackRate = 2.0;
         if (v.paused) v.play();
         return 'speed ensured';
     })()
@@ -592,7 +614,7 @@ def main_loop():
                                 if (v) { v.muted = true; v.play(); }
                             """)
                             if IS_MAC:
-                                subprocess.run(["osascript", "-e", 'tell application "System Events" to keystroke space'], capture_output=True)
+                                subprocess.run(["osascript", "-e", 'tell application "Google Chrome" to activate', "-e", 'tell application "System Events" to keystroke space'], capture_output=True)
                             stall_count = 0
                     else:
                         stall_count = 0
