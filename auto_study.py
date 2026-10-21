@@ -140,10 +140,13 @@ def get_cdp_client():
 
 def exec_js(js_code):
     """Executes JavaScript inside the active Google Chrome tab across macOS and Windows."""
+    code = js_code.strip()
+    if not (code.startswith("(() =>") or code.startswith("(function") or code.startswith("(()=>")):
+        code = f"(() => {{\n{code}\n}})()"
     if IS_MAC:
         cmd = ["osascript", "-l", "JavaScript", "-e", f"""
             const app = Application("Google Chrome");
-            app.windows[0].activeTab.execute({{javascript: {json.dumps(js_code)}}});
+            app.windows[0].activeTab.execute({{javascript: {json.dumps(code)}}});
         """]
         try:
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
@@ -153,7 +156,7 @@ def exec_js(js_code):
     else:
         client = get_cdp_client()
         if client:
-            return client.execute_js(js_code)
+            return client.execute_js(code)
         return ""
 
 def log(msg, color="white"):
@@ -202,17 +205,21 @@ def get_page_status():
         let speedBtnText = speedBtn ? speedBtn.innerText.trim() : '';
         
         let bodyText = document.body.innerText || '';
-        let hasCongrats = bodyText.includes('ยินดีด้วย!') || 
-                          bodyText.includes('คุณเรียนจบบทเรียนนี้แล้ว') || 
-                          bodyText.includes('เรียนจบทุกบทเรียน') ||
-                          bodyText.includes('ได้รับ 100 คะแนน');
+        let modal = document.querySelector('[role="dialog"], [role="alertdialog"], .modal');
+        let modalText = modal ? modal.innerText : '';
+        let hasCongrats = (modalText.includes('ยินดีด้วย') || 
+                           modalText.includes('คุณเรียนจบบทเรียนนี้แล้ว') || 
+                           modalText.includes('เรียนจบ') ||
+                           modalText.includes('ได้รับ 100 คะแนน')) ||
+                          bodyText.includes('ยินดีด้วย! คุณเรียนจบ') ||
+                          bodyText.includes('คุณเรียนจบบทเรียนนี้แล้ว');
                           
         let hasCourseCompleted = bodyText.includes('ขอแสดงความยินดี') ||
                                  bodyText.includes('คุณได้ผ่านเนื้อหาทั้งหมด') ||
                                  bodyText.includes('ยินดีด้วย! คุณเรียนจบหลักสูตรนี้แล้ว') ||
                                  bodyText.includes('ดาวน์โหลดใบประกาศ') ||
                                  bodyText.includes('ดาวน์โหลดใบรับรอง') ||
-                                 bodyText.includes('100%');
+                                 (bodyText.includes('ความคืบหน้า 100%') && bodyText.includes('ใบรับรอง'));
         
         let quizTitle = Array.from(document.querySelectorAll('h1, h2, h3, h4, p, span')).find(e => 
             e.innerText && (e.innerText.includes('แบบทดสอบ') || e.innerText.includes('ผลคะแนน') || e.innerText.includes('คำถาม'))
@@ -260,20 +267,28 @@ def get_page_status():
         return None
 
 def click_button_by_text(target_texts):
-    """Finds and clicks a button that matches one of target_texts."""
+    """Finds and clicks a button that matches one of target_texts by innerText or aria-label."""
     js = f"""
     (() => {{
         let targets = {json.dumps(target_texts)};
         let btns = Array.from(document.querySelectorAll('button, a, div[role="button"]'));
         for (let t of targets) {{
-            let btn = btns.find(b => b.innerText && b.innerText.trim() === t);
+            let btn = btns.find(b => {{
+                let txt = (b.innerText || '').trim();
+                let aria = (b.getAttribute('aria-label') || '').trim();
+                return txt === t || aria === t;
+            }});
             if (btn) {{
                 btn.click();
                 return 'clicked ' + t;
             }}
         }}
         for (let t of targets) {{
-            let btn = btns.find(b => b.innerText && b.innerText.includes(t));
+            let btn = btns.find(b => {{
+                let txt = (b.innerText || '').trim();
+                let aria = (b.getAttribute('aria-label') || '').trim();
+                return txt.includes(t) || aria.includes(t);
+            }});
             if (btn) {{
                 btn.click();
                 return 'partial clicked ' + t;
@@ -333,7 +348,9 @@ def handle_quiz():
         
         // 4. Check if quiz is already submitted and showing score
         let body = document.body.innerText || '';
-        if (body.includes('ผลคะแนน') || body.includes('ผ่านเกณฑ์') || body.includes('ดูใบรับรอง') || body.includes('ได้รับ 100 คะแนน')) {
+        let modal = document.querySelector('[role="dialog"], [role="alertdialog"]');
+        let modalText = modal ? modal.innerText : '';
+        if (body.includes('ผลคะแนน') || body.includes('ผ่านเกณฑ์') || body.includes('ดูใบรับรอง') || modalText.includes('ผ่านเกณฑ์') || modalText.includes('ผลคะแนน')) {
             let courseLink = document.querySelector("a[href*='/courses/']");
             if (courseLink) {
                 courseLink.click();
@@ -557,13 +574,25 @@ def main_loop():
                     
                     # Immediate auto-play if video paused
                     if status["videoPaused"]:
-                        exec_js("let v = document.querySelector('video'); if (v) { v.muted=true; v.play(); }")
+                        exec_js("""
+                            let playBtn = document.querySelector('.vjs-big-play-button, .vjs-play-control');
+                            if (playBtn) playBtn.click();
+                            let v = document.querySelector('video');
+                            if (v) { v.muted = true; v.play(); }
+                        """)
                     
                     # Check stall
                     if int(curr) == int(last_time_val):
                         stall_count += 1
-                        if stall_count >= 4:
-                            exec_js("let v = document.querySelector('video'); if (v) { v.muted=true; v.play(); }")
+                        if stall_count >= 3:
+                            exec_js("""
+                                let playBtn = document.querySelector('.vjs-big-play-button, .vjs-play-control');
+                                if (playBtn) playBtn.click();
+                                let v = document.querySelector('video');
+                                if (v) { v.muted = true; v.play(); }
+                            """)
+                            if IS_MAC:
+                                subprocess.run(["osascript", "-e", 'tell application "System Events" to keystroke space'], capture_output=True)
                             stall_count = 0
                     else:
                         stall_count = 0
@@ -574,7 +603,18 @@ def main_loop():
                         sys.stdout.write("\n")
                         log("🏁 วิดีโอจบแล้ว กำลังรอระบบบันทึกคะแนน...", "green")
                         time.sleep(2)
-                        click_button_by_text(["เรียนต่อ", "ต่อไป", "ปิด", "บทเรียนถัดไป"])
+                        res = click_button_by_text(["เรียนต่อ", "ต่อไป", "ปิด", "บทเรียนถัดไป", "ดูบทเรียนถัดไป", "เสร็จสิ้น"])
+                        if res == 'not found':
+                            exec_js("""
+                                (() => {
+                                    let nextBtn = document.querySelector("button[aria-label='ดูบทเรียนถัดไป']");
+                                    if (nextBtn) { nextBtn.click(); return; }
+                                    let active = document.querySelector("button[aria-label*='บทเรียน'].border-primary, button[aria-label*='บทเรียน'][class*='border-primary']");
+                                    if (active && active.nextElementSibling) {
+                                        active.nextElementSibling.click();
+                                    }
+                                })()
+                            """)
                     
                     time.sleep(1)
                     continue
