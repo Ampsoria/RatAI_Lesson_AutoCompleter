@@ -234,7 +234,7 @@ def get_page_status():
         let quizTitle = Array.from(document.querySelectorAll('h1, h2, h3, h4, p, span')).find(e => 
             e.innerText && (e.innerText.includes('แบบทดสอบ') || e.innerText.includes('ผลคะแนน') || e.innerText.includes('คำถาม'))
         );
-        let hasQuiz = !!quizTitle && !hasVideo;
+        let hasQuiz = !hasVideo && (!!quizTitle || !!document.querySelector('[role="radiogroup"], [role="radio"]'));
         
         let lessonName = "";
         let activeLessonBtn = document.querySelector("button[aria-label*='บทเรียน'].border-primary, button[aria-label*='บทเรียน'][class*='border-primary']");
@@ -348,7 +348,34 @@ def handle_quiz():
     """Answers all quiz questions, handles confirmation dialogs, and submits."""
     js = """
     (() => {
-        // 1. Check if there is a start quiz button
+        // 1. Check if confirmation modal is open
+        let confirmBtn = Array.from(document.querySelectorAll('button')).find(b => b.innerText && b.innerText.trim() === 'ยืนยัน');
+        let modal = document.querySelector('[role="dialog"], [role="alertdialog"], .modal');
+        let modalText = modal ? modal.innerText : '';
+        if (confirmBtn && modalText.includes('ยืนยันการส่งคำตอบ')) {
+            confirmBtn.click();
+            return 'clicked confirm submit in modal';
+        }
+        
+        // 2. Check if result modal / score popup is showing
+        if (modalText.includes('ผลลัพธ์') || modalText.includes('ผลคะแนน') || modalText.includes('ไม่ผ่านเกณฑ์') || modalText.includes('ผ่านเกณฑ์')) {
+            // Dismiss dialog
+            let closeBtn = Array.from(document.querySelectorAll('button')).find(b => ['Close', 'ปิด'].includes(b.innerText.trim()));
+            if (closeBtn) closeBtn.click();
+            
+            // Advance to next lesson in carousel
+            let nextArrow = document.querySelector("button[aria-label='ดูบทเรียนถัดไป']");
+            if (nextArrow) nextArrow.click();
+            
+            let allLessons = Array.from(document.querySelectorAll("button[aria-label*='บทเรียน']"));
+            let uncompleted = allLessons.find(b => !b.className.includes('bg-primary'));
+            if (uncompleted) {
+                uncompleted.click();
+                return 'advanced to next lesson from result modal';
+            }
+        }
+        
+        // 3. Check if there is a start quiz button
         let startBtn = Array.from(document.querySelectorAll('button')).find(b => 
             b.innerText && (b.innerText.includes('เริ่มทำแบบทดสอบ') || b.innerText.includes('ทำแบบทดสอบอีกครั้ง'))
         );
@@ -357,35 +384,7 @@ def handle_quiz():
             return 'clicked start quiz';
         }
         
-        // 2. Dismiss any alert toasts
-        document.querySelectorAll("button[aria-label*='ปิดข้อความแจ้งเตือน']").forEach(b => b.click());
-        
-        // 3. Check if confirmation modal is open
-        let confirmBtn = Array.from(document.querySelectorAll('button')).find(b => b.innerText && b.innerText.trim() === 'ยืนยัน');
-        let modalText = document.querySelector('[role="dialog"], [role="alertdialog"]');
-        if (confirmBtn && modalText && modalText.innerText.includes('ยืนยันการส่งคำตอบ')) {
-            confirmBtn.click();
-            return 'clicked confirm submit in modal';
-        }
-        
-        // 4. Check if quiz is already submitted and showing score
-        let body = document.body.innerText || '';
-        let modal = document.querySelector('[role="dialog"], [role="alertdialog"]');
-        let modalText = modal ? modal.innerText : '';
-        if (body.includes('ผลคะแนน') || body.includes('ผ่านเกณฑ์') || body.includes('ดูใบรับรอง') || modalText.includes('ผ่านเกณฑ์') || modalText.includes('ผลคะแนน')) {
-            let courseLink = document.querySelector("a[href*='/courses/']");
-            if (courseLink) {
-                courseLink.click();
-                return 'navigated to course completion';
-            }
-            let homeLink = Array.from(document.querySelectorAll('a')).find(a => a.innerText && a.innerText.trim() === 'หน้าแรก');
-            if (homeLink) {
-                homeLink.click();
-                return 'navigated to home';
-            }
-        }
-        
-        // 5. Select answers for ALL questions on the page
+        // 4. Select answers for ALL questions on the page
         let groups = Array.from(document.querySelectorAll('[role="radiogroup"]'));
         if (groups.length > 0) {
             let newlySelected = 0;
@@ -415,7 +414,7 @@ def handle_quiz():
             }
         }
         
-        // 6. Submit Quiz
+        // 5. Submit Quiz
         let submitBtn = Array.from(document.querySelectorAll('button')).find(b => 
             b.innerText && (
                 b.innerText.trim() === 'ส่งคำตอบ' || 
@@ -429,19 +428,31 @@ def handle_quiz():
             return 'clicked submit quiz';
         }
         
-        // 7. Next Question or Next Lesson
+        // 6. Next Question or Next Lesson button
         let nextBtn = Array.from(document.querySelectorAll('button, a')).find(b => 
             b.innerText && (
                 b.innerText.trim() === 'ข้อถัดไป' || 
                 b.innerText.trim() === 'ถัดไป' ||
-                b.innerText.trim() === 'ดูผลคะแนน' ||
                 b.innerText.trim() === 'เรียนต่อ' ||
                 b.innerText.trim() === 'บทเรียนถัดไป'
             )
         );
         if (nextBtn) {
             nextBtn.click();
-            return 'clicked next question';
+            return 'clicked next';
+        }
+        
+        // 7. If quiz is already finished or showing score on page
+        let body = document.body.innerText || '';
+        if (body.includes('ทำใหม่อีกครั้ง') || (body.includes('ผลคะแนน') && !groups.length)) {
+            let nextArrow = document.querySelector("button[aria-label='ดูบทเรียนถัดไป']");
+            if (nextArrow) nextArrow.click();
+            let allLessons = Array.from(document.querySelectorAll("button[aria-label*='บทเรียน']"));
+            let uncompleted = allLessons.find(b => !b.className.includes('bg-primary'));
+            if (uncompleted) {
+                uncompleted.click();
+                return 'advanced to next lesson after quiz';
+            }
         }
         
         return 'quiz step handled';
