@@ -6,8 +6,8 @@ By Ampsoria (https://github.com/Ampsoria/RatAI_Lesson_AutoCompleter)
 Features:
 - Prioritizes and runs courses with highest points descending
 - Automatically sets video speed to 2.0x (safe maximum supported in LMS UI)
-- Auto-completes quizzes and transitions smoothly between lessons
-- Auto-enrolls and starts the next highest-scoring course upon completion
+- Auto-completes single and multi-question quizzes and handles confirmation modals
+- Auto-detects course completion (100% / certificates) and transitions to next course
 - Loops perpetually until all available courses are 100% completed
 - Cross-platform: macOS (Native AppleScript JXA) & Windows/Linux (Zero-dependency CDP WebSocket)
 """
@@ -202,10 +202,21 @@ def get_page_status():
         let speedBtnText = speedBtn ? speedBtn.innerText.trim() : '';
         
         let bodyText = document.body.innerText || '';
-        let hasCongrats = bodyText.includes('ยินดีด้วย!') || bodyText.includes('คุณเรียนจบบทเรียนนี้แล้ว') || bodyText.includes('เรียนจบทุกบทเรียน');
-        let hasCourseCompleted = bodyText.includes('ยินดีด้วย! คุณเรียนจบหลักสูตรนี้แล้ว') || bodyText.includes('ดาวน์โหลดใบประกาศ');
+        let hasCongrats = bodyText.includes('ยินดีด้วย!') || 
+                          bodyText.includes('คุณเรียนจบบทเรียนนี้แล้ว') || 
+                          bodyText.includes('เรียนจบทุกบทเรียน') ||
+                          bodyText.includes('ได้รับ 100 คะแนน');
+                          
+        let hasCourseCompleted = bodyText.includes('ขอแสดงความยินดี') ||
+                                 bodyText.includes('คุณได้ผ่านเนื้อหาทั้งหมด') ||
+                                 bodyText.includes('ยินดีด้วย! คุณเรียนจบหลักสูตรนี้แล้ว') ||
+                                 bodyText.includes('ดาวน์โหลดใบประกาศ') ||
+                                 bodyText.includes('ดาวน์โหลดใบรับรอง') ||
+                                 bodyText.includes('100%');
         
-        let quizTitle = Array.from(document.querySelectorAll('h1, h2, h3, h4, p')).find(e => e.innerText && e.innerText.includes('แบบทดสอบ'));
+        let quizTitle = Array.from(document.querySelectorAll('h1, h2, h3, h4, p, span')).find(e => 
+            e.innerText && (e.innerText.includes('แบบทดสอบ') || e.innerText.includes('ผลคะแนน') || e.innerText.includes('คำถาม'))
+        );
         let hasQuiz = !!quizTitle && !hasVideo;
         
         let lessonName = "";
@@ -297,43 +308,97 @@ def ensure_2x_speed():
     return exec_js(js)
 
 def handle_quiz():
-    """Answers quiz questions and submits."""
+    """Answers all quiz questions, handles confirmation dialogs, and submits."""
     js = """
     (() => {
-        let startBtn = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('เริ่มทำแบบทดสอบ'));
+        // 1. Check if there is a start quiz button
+        let startBtn = Array.from(document.querySelectorAll('button')).find(b => 
+            b.innerText && (b.innerText.includes('เริ่มทำแบบทดสอบ') || b.innerText.includes('ทำแบบทดสอบอีกครั้ง'))
+        );
         if (startBtn) {
             startBtn.click();
             return 'clicked start quiz';
         }
         
-        let options = Array.from(document.querySelectorAll('input[type="radio"], [role="radio"], .quiz-option, label'));
-        if (options.length > 0) {
-            for (let opt of options) {
-                if (opt.tagName === 'INPUT' && !opt.checked) {
-                    opt.click();
-                    break;
-                } else if (opt.getAttribute('role') === 'radio' && opt.getAttribute('aria-checked') !== 'true') {
-                    opt.click();
-                    break;
-                }
+        // 2. Dismiss any alert toasts
+        document.querySelectorAll("button[aria-label*='ปิดข้อความแจ้งเตือน']").forEach(b => b.click());
+        
+        // 3. Check if confirmation modal is open
+        let confirmBtn = Array.from(document.querySelectorAll('button')).find(b => b.innerText && b.innerText.trim() === 'ยืนยัน');
+        let modalText = document.querySelector('[role="dialog"], [role="alertdialog"]');
+        if (confirmBtn && modalText && modalText.innerText.includes('ยืนยันการส่งคำตอบ')) {
+            confirmBtn.click();
+            return 'clicked confirm submit in modal';
+        }
+        
+        // 4. Check if quiz is already submitted and showing score
+        let body = document.body.innerText || '';
+        if (body.includes('ผลคะแนน') || body.includes('ผ่านเกณฑ์') || body.includes('ดูใบรับรอง') || body.includes('ได้รับ 100 คะแนน')) {
+            let courseLink = document.querySelector("a[href*='/courses/']");
+            if (courseLink) {
+                courseLink.click();
+                return 'navigated to course completion';
+            }
+            let homeLink = Array.from(document.querySelectorAll('a')).find(a => a.innerText && a.innerText.trim() === 'หน้าแรก');
+            if (homeLink) {
+                homeLink.click();
+                return 'navigated to home';
             }
         }
         
+        // 5. Select answers for ALL questions on the page
+        let groups = Array.from(document.querySelectorAll('[role="radiogroup"]'));
+        if (groups.length > 0) {
+            let newlySelected = 0;
+            groups.forEach(g => {
+                let radios = Array.from(g.querySelectorAll('[role="radio"]'));
+                let isChecked = radios.some(r => r.getAttribute('aria-checked') === 'true' || r.getAttribute('data-state') === 'checked');
+                if (!isChecked && radios.length > 0) {
+                    // Prefer "ถูกทุกข้อ" or "ทุกข้อที่กล่าวมา" if present
+                    let target = radios.find(r => {
+                        let l = r.closest('label') || r.parentElement;
+                        let t = l ? l.innerText : '';
+                        return t.includes('ถูกทุกข้อ') || t.includes('ทุกข้อที่กล่าวมา');
+                    }) || radios[0];
+                    target.click();
+                    newlySelected++;
+                }
+            });
+            if (newlySelected > 0) {
+                return 'selected answers for ' + newlySelected + ' questions';
+            }
+        } else {
+            let radios = Array.from(document.querySelectorAll('input[type="radio"], [role="radio"]'));
+            let unchecked = radios.filter(r => (r.tagName === 'INPUT' && !r.checked) || (r.getAttribute('role') === 'radio' && r.getAttribute('aria-checked') !== 'true'));
+            if (unchecked.length > 0) {
+                unchecked[0].click();
+                return 'selected single radio';
+            }
+        }
+        
+        // 6. Submit Quiz
         let submitBtn = Array.from(document.querySelectorAll('button')).find(b => 
-            b.innerText.includes('ส่งคำตอบ') || 
-            b.innerText.includes('ตรวจคำตอบ') || 
-            b.innerText.includes('ส่งแบบทดสอบ') ||
-            b.innerText.includes('ยืนยันคำตอบ')
+            b.innerText && (
+                b.innerText.trim() === 'ส่งคำตอบ' || 
+                b.innerText.trim() === 'ตรวจคำตอบ' || 
+                b.innerText.trim() === 'ส่งแบบทดสอบ' ||
+                b.innerText.trim() === 'ยืนยันคำตอบ'
+            )
         );
-        if (submitBtn) {
+        if (submitBtn && !submitBtn.disabled) {
             submitBtn.click();
             return 'clicked submit quiz';
         }
         
-        let nextBtn = Array.from(document.querySelectorAll('button')).find(b => 
-            b.innerText.trim() === 'ข้อถัดไป' || 
-            b.innerText.trim() === 'ถัดไป' ||
-            b.innerText.trim() === 'ดูผลคะแนน'
+        // 7. Next Question or Next Lesson
+        let nextBtn = Array.from(document.querySelectorAll('button, a')).find(b => 
+            b.innerText && (
+                b.innerText.trim() === 'ข้อถัดไป' || 
+                b.innerText.trim() === 'ถัดไป' ||
+                b.innerText.trim() === 'ดูผลคะแนน' ||
+                b.innerText.trim() === 'เรียนต่อ' ||
+                b.innerText.trim() === 'บทเรียนถัดไป'
+            )
         );
         if (nextBtn) {
             nextBtn.click();
@@ -402,22 +467,19 @@ def get_home_courses():
         return []
 
 def click_course_card(title):
-    """Clicks a course card by its title on LMS home."""
+    """Clicks a course card by its title on LMS home using closest cursor-pointer element."""
     js = f"""
     (() => {{
         let title = {json.dumps(title)};
-        let h3s = Array.from(document.querySelectorAll('h3, h4, p, span, div')).filter(e => e.innerText && e.innerText.trim() === title);
-        for (let h of h3s) {{
-            let curr = h;
-            while (curr && curr !== document.body) {{
-                if (curr.tagName === 'A' || curr.tagName === 'BUTTON' || window.getComputedStyle(curr).cursor === 'pointer') {{
-                    curr.click();
-                    return 'clicked card: ' + title;
-                }}
-                curr = curr.parentElement;
+        let els = Array.from(document.querySelectorAll('h3, h4, p, span, div')).filter(e => e.innerText && e.innerText.trim() === title);
+        for (let el of els) {{
+            let card = el.closest('.cursor-pointer') || el.closest('[class*="cursor-pointer"]') || el.closest('a') || el.closest('button');
+            if (card) {{
+                card.click();
+                return 'clicked card: ' + title;
             }}
-            h.click();
-            return 'clicked h: ' + title;
+            el.click();
+            return 'clicked el: ' + title;
         }}
         return 'title card not found';
     }})()
@@ -428,7 +490,7 @@ def main_loop():
     log("="*60, "cyan")
     log("🚀 RATAI LESSON AUTOCOMPLETER STARTED", "bold")
     log(f"💻 Platform: {'macOS (AppleScript JXA)' if IS_MAC else 'Windows / Linux (CDP port 9222)'}", "cyan")
-    log("🎯 Auto-Priority Queue: Highest points first", "green")
+    log("🎯 Auto-Priority Queue: Highest points first (Continuous Loop)", "green")
     log("="*60, "cyan")
     
     initial_check = exec_js("document.title")
@@ -467,7 +529,7 @@ def main_loop():
                 
                 if status["hasCongrats"]:
                     log("🎉 บทเรียนเสร็จสิ้น! กำลังคลิก 'เรียนต่อ'...", "green")
-                    click_button_by_text(["เรียนต่อ", "ต่อไป", "ปิด"])
+                    click_button_by_text(["เรียนต่อ", "ต่อไป", "ปิด", "บทเรียนถัดไป", "เสร็จสิ้น"])
                     time.sleep(2)
                     continue
                 
@@ -512,7 +574,7 @@ def main_loop():
                         sys.stdout.write("\n")
                         log("🏁 วิดีโอจบแล้ว กำลังรอระบบบันทึกคะแนน...", "green")
                         time.sleep(2)
-                        click_button_by_text(["เรียนต่อ", "ต่อไป", "ปิด"])
+                        click_button_by_text(["เรียนต่อ", "ต่อไป", "ปิด", "บทเรียนถัดไป"])
                     
                     time.sleep(1)
                     continue
@@ -524,12 +586,18 @@ def main_loop():
                     time.sleep(2)
                     continue
                 
-                click_button_by_text(["เรียนต่อ", "ต่อไป"])
+                click_button_by_text(["เรียนต่อ", "ต่อไป", "บทเรียนถัดไป", "เสร็จสิ้น"])
                 time.sleep(2)
                 continue
             
             # --- CASE 2: Inside Course Detail Page ---
             if status["isCourse"]:
+                if status["hasCourseCompleted"]:
+                    log("🏆 คอร์สนี้เรียนจบ 100% แล้ว กำลังกลับหน้าแรกเพื่อเรียนคอร์สถัดไป...", "magenta")
+                    exec_js("window.location.href = 'https://de.aipass.net/lms'")
+                    time.sleep(3)
+                    continue
+                    
                 log("📖 อยู่ในหน้ารายละเอียดคอร์ส กำลังคลิกเริ่มเรียน...", "cyan")
                 click_button_by_text(["เริ่มเรียน", "เรียนต่อ"])
                 time.sleep(3)
